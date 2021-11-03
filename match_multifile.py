@@ -38,7 +38,7 @@ def match_response(regex, content):
     items = re.findall(regex, content)
     if items:
         for item in items:
-            print(item)
+            print(" ".join(item))
 
 
 def main(path, regex):
