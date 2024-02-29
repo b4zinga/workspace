@@ -2,7 +2,10 @@
 import base64
 import hashlib
 import inspect
+import json
 import os
+import random
+import re
 import sys
 import urllib.parse
 
@@ -13,8 +16,7 @@ def get_files(path, full_path=True, suffix=""):
         files.append(path if full_path else os.path.basename(path))
     elif os.path.isdir(path):
         for i in os.listdir(path):
-            files.extend(
-                get_files(os.path.join(path, i), full_path, suffix))
+            files.extend(get_files(os.path.join(path, i), full_path, suffix))
     return files
 
 
@@ -31,31 +33,31 @@ class StrTool:
         else:
             self.input = str(input)
 
-    def unicode2str(self):
+    def unicode2s(self):
         """
         unicode 转 string
         """
         return self.input.encode().decode("unicode_escape")
 
-    def str2unicode(self):
+    def s2unicode(self):
         """
         string 转 unicode
         """
         return self.input.encode("unicode_escape").decode()
 
-    def url2str(self):
+    def url2s(self):
         """
         url 转 string
         """
         return urllib.parse.unquote(self.input)
 
-    def str2url(self):
+    def s2url(self):
         """
         string 转 url
         """
         return urllib.parse.quote(self.input)
 
-    def hex2str(self):
+    def hex2s(self):
         """
         hex 转 string
         """
@@ -63,38 +65,40 @@ class StrTool:
             self.input = self.input[2:]
         return bytes.fromhex(self.input).decode()
 
-    def str2hex(self):
+    def s2hex(self):
         """
         string 转 hex
         """
-        return "0x"+self.input.encode().hex()
+        return "0x" + self.input.encode().hex()
 
-    def bin2str(self):
+    def bin2s(self):
         """
         binary 转 string
         """
         self.input = self.input.replace(" ", "")
-        return bytearray(int(self.input[i:i+8], 2) for i in range(0, len(self.input), 8)).decode()
+        return bytearray(
+            int(self.input[i : i + 8], 2) for i in range(0, len(self.input), 8)
+        ).decode()
 
-    def str2bin(self):
+    def s2bin(self):
         """
         string 转 binary
         """
-        return " ".join(format(byte, '08b') for byte in self.input.encode())
+        return " ".join(format(byte, "08b") for byte in self.input.encode())
 
-    def base642str(self):
+    def b642s(self):
         """
         base64  转 string
         """
         return base64.b64decode(self.input.encode()).decode()
 
-    def str2base64(self):
+    def s2b64(self):
         """
         string 转 base64
         """
         return base64.b64encode(self.input.encode()).decode()
 
-    def length(self):
+    def len(self):
         """
         计算string长度
         """
@@ -124,36 +128,33 @@ class StrTool:
         """
         return hashlib.sha512(self.input.encode()).hexdigest()
 
-    def reverse(self):
+    def rs(self):
         """
         string 倒序
         """
         return self.input[::-1]
 
-    def randomstr(self):
+    def rands(self):
         """
         随机字符串
         """
-        import random
         pwd = ""
         char = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         for i in range(int(self.input)):
             pwd += random.choice(char)
         return pwd
 
-    def jsonify(self):
+    def jsonf(self):
         """
         json 格式化
         """
-        import json
         obj = json.loads(self.input)
-        return json.dumps(obj, sort_keys=True, indent=4, separators=(',', ':'))
+        return json.dumps(obj, sort_keys=True, indent=4, separators=(",", ":"))
 
     def refind(self):
         """
         正则提取
         """
-        import re
         regex = sys.argv[2]
         items = re.findall(regex, self.input)
         if len(items) > 1:
@@ -169,21 +170,40 @@ class StrTool:
         """
         return "\n".join(set(self.input.splitlines()))
 
-    def column(self):
+    def dedup2(self):
         """
-        按列取值
+        双列去重
         """
-        sep = sys.argv[2]
-        n = int(sys.argv[3])
-        return "\n".join(i.split(sep)[n] for i in [line for line in self.input.splitlines()])
+        new_file = sys.argv.pop(-1)
+        if not os.path.exists(new_file):
+            col = new_file.splitlines()
+        else:
+            with open(new_file) as f:
+                col = f.read().splitlines()
+        return "\n".join(
+            [i for i in [line for line in self.input.splitlines()] if i not in col]
+        )
+
+    def col(self):
+        """
+        按列取值 -> st.py col [sep] [num] file.txt
+        """
+        n = int(sys.argv.pop(-1))
+        sep = sys.argv[2] or " "
+        return "\n".join(
+            i.split(sep)[n] for i in [line for line in self.input.splitlines()]
+        )
 
 
 def print_usage():
     print(f"Usage:\n\t{sys.argv[0]} [function] [string|path|length|regex]")
     print("\nAvailable functions:\n")
     st = StrTool()
-    functions = [(name, inspect.getdoc(getattr(st, name)))
-                 for name in dir(st) if callable(getattr(st, name))]
+    functions = [
+        (name, inspect.getdoc(getattr(st, name)))
+        for name in dir(st)
+        if callable(getattr(st, name))
+    ]
     for f, doc in functions:
         if not f.startswith("_"):
             print(f"\t{f:15}{doc}")
@@ -201,11 +221,10 @@ if __name__ == "__main__":
         input = sys.argv.pop(-1)
         st._set_input(input)
     try:
-        f = sys.argv[1]
-        result = ""
-        # print("functions: {}".format(" -> ".join(f.split("|"))))
-        for n in f.split("|"):
-            result = getattr(st, n)()
+        funcs = sys.argv[1]
+        # print("functions: {}".format(" -> ".join(funcs.split("|"))))
+        for func in funcs.split("|"):
+            result = getattr(st, func)()
             st._set_input(str(result))  # function chains input
         print(result)
     except Exception as err:
