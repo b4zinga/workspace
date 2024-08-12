@@ -7,6 +7,7 @@ import os
 import random
 import re
 import sys
+import time
 import urllib.parse
 
 
@@ -128,7 +129,7 @@ class StrTool:
         """
         return hashlib.sha512(self.input.encode()).hexdigest()
 
-    def rs(self):
+    def reverse(self):
         """
         string 倒序
         """
@@ -193,6 +194,24 @@ class StrTool:
         return "\n".join(
             i.split(sep)[n] for i in [line for line in self.input.splitlines()]
         )
+
+    def ts(self):
+        """
+        当前时间戳
+        """
+        return int(time.time())
+
+    def ts2s(self):
+        """
+        时间戳 转 string
+        """
+        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(self.input)))
+
+    def s2ts(self):
+        """
+        string 转 时间戳
+        """
+        return int(time.mktime(time.strptime(self.input, '%Y-%m-%d %H:%M:%S')))
 
 
 def print_usage():
