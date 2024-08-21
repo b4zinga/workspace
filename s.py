@@ -40,7 +40,7 @@ class StrTool:
         """
         return self.input.encode().decode("unicode_escape")
 
-    def s2unicode(self):
+    def unicode(self):
         """
         string 转 unicode
         """
@@ -52,7 +52,7 @@ class StrTool:
         """
         return urllib.parse.unquote(self.input)
 
-    def s2url(self):
+    def url(self):
         """
         string 转 url
         """
@@ -66,7 +66,7 @@ class StrTool:
             self.input = self.input[2:]
         return bytes.fromhex(self.input).decode()
 
-    def s2hex(self):
+    def hex(self):
         """
         string 转 hex
         """
@@ -81,7 +81,7 @@ class StrTool:
             int(self.input[i : i + 8], 2) for i in range(0, len(self.input), 8)
         ).decode()
 
-    def s2bin(self):
+    def bin(self):
         """
         string 转 binary
         """
@@ -93,7 +93,7 @@ class StrTool:
         """
         return base64.b64decode(self.input.encode()).decode()
 
-    def s2b64(self):
+    def b64(self):
         """
         string 转 base64
         """
@@ -165,13 +165,13 @@ class StrTool:
         else:
             return "not found"
 
-    def dedup(self):
+    def uniq_row(self):
         """
         多行去重
         """
         return "\n".join(set(self.input.splitlines()))
 
-    def dedup2(self):
+    def uniq_col(self):
         """
         双列去重
         """
@@ -195,23 +195,30 @@ class StrTool:
             i.split(sep)[n] for i in [line for line in self.input.splitlines()]
         )
 
-    def ts(self):
+    def wc(self):
+        """
+        计算行数
+        """
+        return len(self.input.splitlines())
+
+    @staticmethod
+    def ts():
         """
         当前时间戳
         """
         return int(time.time())
 
-    def ts2s(self):
+    def t2s(self):
         """
         时间戳 转 string
         """
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(self.input)))
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(self.input)))
 
-    def s2ts(self):
+    def s2t(self):
         """
         string 转 时间戳
         """
-        return int(time.mktime(time.strptime(self.input, '%Y-%m-%d %H:%M:%S')))
+        return int(time.mktime(time.strptime(self.input, "%Y-%m-%d %H:%M:%S")))
 
 
 def print_usage():
@@ -231,21 +238,22 @@ def print_usage():
 
 if __name__ == "__main__":
     st = StrTool()
-    if not sys.stdin.isatty():
+    if not sys.stdin.isatty():  # pipe
         st._set_input(sys.stdin.read().strip())
-    else:
-        if len(sys.argv) < 3:
+    else:  # cmdline
+        if len(sys.argv) < 2:
             print_usage()
             sys.exit(0)
-        input = sys.argv.pop(-1)
-        st._set_input(input)
+        if len(sys.argv) > 2:
+            input = sys.argv.pop(-1)
+            st._set_input(input)
     try:
         funcs = sys.argv[1]
-        # print("functions: {}".format(" -> ".join(funcs.split("|"))))
+        # print(f"functions: {" -> ".join(funcs.split("|"))}")
         for func in funcs.split("|"):
             result = getattr(st, func)()
+            # print(f"result: {func} -> {result}")
             st._set_input(str(result))  # function chains input
         print(result)
     except Exception as err:
         print(f"\nError: {err}\n")
-        print_usage()
